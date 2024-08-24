@@ -87,29 +87,6 @@ const OperaForm = () => {
     }
   };
 
-  // get user name
-  const getUserSpecificValue = async (userId) => {
-    try {
-      const userDocRef = doc(db, "users", userId);
-      const userDocSnapshot = await getDoc(userDocRef);
-
-      if (userDocSnapshot.exists()) {
-        const userData = userDocSnapshot.data();
-        const firstName = userData.firstName;
-        const lastName = userData.lastName;
-        const fullName = `${firstName} ${lastName}`;
-
-        return fullName;
-      } else {
-        console.log("Document does not exist");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error getting user data:", error);
-      return null;
-    }
-  };
-
   const handleFruitChange = (event) => {
     const selectedValue = event.target.value;
     setSelectedFruit(selectedValue);
@@ -142,11 +119,8 @@ const OperaForm = () => {
   };
 
   const sendEmailToAdmin = async () => {
-    const userId = currentUser.uid;
-    const preparedBy = await getUserSpecificValue(userId);
-
     const templateParams = {
-      creator_name: preparedBy,
+      creator_name: `${currentUser.firstName} ${currentUser.lastName}`,
       form_name: "Opera Form",
       managers: selectedManagers,
     };
@@ -166,9 +140,6 @@ const OperaForm = () => {
   };
 
   const sendEmailToManagers = async (selectedManagers) => {
-    const userId = currentUser.uid;
-    const preparedBy = await getUserSpecificValue(userId);
-
     for (const manager of selectedManagers) {
       try {
         const q = query(
@@ -183,7 +154,7 @@ const OperaForm = () => {
           const templateParams = {
             to_name: manager,
             to_email: userData.email,
-            creator_name: preparedBy,
+            creator_name: `${currentUser.firstName} ${currentUser.lastName}`,
             form_name: "Opera Form",
           };
 
@@ -204,15 +175,53 @@ const OperaForm = () => {
     }
   };
 
+  const NotifyITMember = async (employeeData) => {
+    try {
+      // Ensure selectedHotel and currentUser.itMembers are defined
+      if (!selectedHotel || !currentUser.itMembers) {
+        throw new Error(
+          "selectedHotel or currentUser.itMembers is not defined."
+        );
+      }
+
+      // Find the IT Member with a matching hotel
+      const itMember = currentUser.itMembers.find(
+        (member) => member.hotel === selectedHotel
+      );
+
+      if (!itMember) {
+        console.error("No IT Member found for the selected hotel.");
+        return;
+      }
+
+      // Get the full name of the IT Member
+      const fullName = itMember.fullName;
+
+      // Create a new document in the ItRequests collection
+      const docRef = await addDoc(collection(db, "ItRequests"), {
+        ...employeeData,
+          form: "Opera",
+          database: selectedDb,
+          authorization: selectedFruit,
+          authorizationOptuins: selectedCheckbooks,
+          createdAt: serverTimestamp(),
+          recievedBy: fullName,
+          status: "New",
+          preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
+          requestID: docRef.id,
+      });
+
+      console.log("Document created with ID:", docRef.id);
+    } catch (error) {
+      console.error("Error creating IT request document:", error);
+    }
+  };
+
   const onSubmit = async (formData) => {
     setLoading(true);
 
     try {
       const { ...employeeData } = formData;
-
-      const userId = currentUser.uid;
-
-      const preparedBy = await getUserSpecificValue(userId);
 
       // Store user data in Firestore, including selected role
       const docRef = await addDoc(collection(db, "employees"), {
@@ -223,7 +232,7 @@ const OperaForm = () => {
         authorization: selectedFruit,
         authorizationOptuins: selectedCheckbooks,
         managers: selectedManagers,
-        preparedBy: preparedBy,
+        preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
         status: "pending",
         createdAt: serverTimestamp(),
         form: "Opera",
@@ -239,15 +248,16 @@ const OperaForm = () => {
           createdAt: serverTimestamp(),
           recievedBy: manager,
           status: "New",
-          preparedBy: preparedBy,
+          preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
           requestID: docRef.id,
         });
       }
 
       await sendEmailToAdmin();
-
       await sendEmailToManagers(selectedManagers);
 
+      await NotifyITMember(employeeData);
+      
       handleClick();
       setIsError(false);
       setError("");

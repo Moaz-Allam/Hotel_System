@@ -8,7 +8,6 @@ import {
   Stack,
   Backdrop,
   CircularProgress,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -17,7 +16,6 @@ import {
   Button,
   TextField,
 } from "@mui/material";
-import { Refresh } from "@mui/icons-material";
 import {
   getDoc,
   serverTimestamp,
@@ -40,6 +38,7 @@ function Requests() {
   const [hasRequests, setHasRequests] = useState(false);
   const [allRequests, setAllRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [textValue, setTextValue] = useState("");
 
   const { currentUser } = useContext(AuthContext);
 
@@ -47,66 +46,73 @@ function Requests() {
     setValue(newValue);
   };
 
+  const handleTextChange = (event) => {
+    setTextValue(event.target.value); // Update state with the input value
+  };
+
   const handleClose = () => {
     setOpen(false);
   };
 
-  const fetchRequests = useCallback(async () => {
-    if (!currentUser) return;
+  const fetchRequests = useCallback(
+    async (collectionName) => {
+      if (!currentUser) return;
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      // Queries to fetch new and all requests
-      const qNew = query(
-        collection(db, "requests"),
-        where(
-          "recievedBy",
-          "==",
-          `${currentUser.firstName} ${currentUser.lastName}`
-        ),
-        where("status", "==", "New")
-      );
+        // Queries to fetch new and all requests
+        const qNew = query(
+          collection(db, collectionName),
+          where(
+            "recievedBy",
+            "==",
+            `${currentUser.firstName} ${currentUser.lastName}`
+          ),
+          where("status", "==", "New")
+        );
 
-      const qAll = query(
-        collection(db, "requests"),
-        where(
-          "recievedBy",
-          "==",
-          `${currentUser.firstName} ${currentUser.lastName}`
-        ),
-        where("status", "in", ["Accepted", "Rejected"])
-      );
+        const qAll = query(
+          collection(db, collectionName),
+          where(
+            "recievedBy",
+            "==",
+            `${currentUser.firstName} ${currentUser.lastName}`
+          ),
+          where("status", "in", ["Accepted", "Rejected"])
+        );
 
-      // Fetch data from Firestore
-      const querySnapshotNew = await getDocs(qNew);
-      const querySnapshotAll = await getDocs(qAll);
+        // Fetch data from Firestore
+        const querySnapshotNew = await getDocs(qNew);
+        const querySnapshotAll = await getDocs(qAll);
 
-      // Process new requests
-      const pendingRequestsData = [];
-      querySnapshotNew.forEach((doc) => {
-        const request = { id: doc.id, ...doc.data() };
-        pendingRequestsData.push(request);
-      });
+        // Process new requests
+        const pendingRequestsData = [];
+        querySnapshotNew.forEach((doc) => {
+          const request = { id: doc.id, ...doc.data() };
+          pendingRequestsData.push(request);
+        });
 
-      // Process all requests
-      const allRequestsData = [];
-      querySnapshotAll.forEach((doc) => {
-        const request = { id: doc.id, ...doc.data() };
-        allRequestsData.push(request);
-      });
+        // Process all requests
+        const allRequestsData = [];
+        querySnapshotAll.forEach((doc) => {
+          const request = { id: doc.id, ...doc.data() };
+          allRequestsData.push(request);
+        });
 
-      // Update state
-      setPendingRequests(pendingRequestsData);
-      setHasNewRequests(pendingRequestsData.length > 0);
-      setAllRequests(allRequestsData);
-      setHasRequests(allRequestsData.length > 0);
-    } catch (error) {
-      console.error("Error fetching pending requests:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
+        // Update state
+        setPendingRequests(pendingRequestsData);
+        setHasNewRequests(pendingRequestsData.length > 0);
+        setAllRequests(allRequestsData);
+        setHasRequests(allRequestsData.length > 0);
+      } catch (error) {
+        console.error("Error fetching pending requests:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentUser]
+  );
 
   const updateStatus = async (requestID, statusValue, formType) => {
     try {
@@ -198,19 +204,27 @@ function Requests() {
     }
   };
 
-  const handleClick = async (requestId, statusValue, employeeID, formType) => {
+  const handleClick = async (
+    collectionName,
+    requestId,
+    statusValue,
+    employeeID,
+    formType,
+    comment,
+  ) => {
     try {
-      const requestRef = doc(db, "requests", requestId);
+      const requestRef = doc(db, collectionName, requestId);
       await updateDoc(requestRef, {
         status: statusValue,
         checkedAt: serverTimestamp(),
+        comment: comment,
       });
 
       await updateStatus(employeeID, statusValue, formType);
 
       await sendEmailToAdmin(employeeID, statusValue, formType);
 
-      fetchRequests();
+      fetchRequests(collectionName);
       handleClose();
     } catch (error) {
       console.error("Error accepting request:", error);
@@ -220,7 +234,11 @@ function Requests() {
 
   useEffect(() => {
     if (currentUser) {
-      fetchRequests();
+      if (currentUser.role === "IT Member") {
+        fetchRequests("ItRequests");
+      } else {
+        fetchRequests("requests");
+      }
     }
   }, [currentUser]);
 
@@ -233,9 +251,6 @@ function Requests() {
     <Box>
       <Stack direction="row">
         <Header title="REQUESTS" subTitle="List of forms that requested" />
-        <IconButton onClick={fetchRequests} aria-label="delete">
-          <Refresh />
-        </IconButton>
       </Stack>
       <Box sx={{ width: "100%", typography: "body1" }}>
         <TabContext value={value}>
@@ -263,14 +278,19 @@ function Requests() {
                     formName={request.form}
                     clockNum={request.clockNum}
                     status={request.status}
-                    onAccept={() =>
-                      handleClick(
-                        request.id,
-                        "Accepted",
-                        request.requestID,
-                        request.form
-                      )
-                    }
+                    onAccept={() => {
+                      if (currentUser.role === "IT Member") {
+                        handleOpenDialog(request);
+                      } else {
+                        handleClick(
+                          "requests",
+                          request.id,
+                          "Accepted",
+                          request.requestID,
+                          request.form
+                        );
+                      }
+                    }}
                     onDelete={() => handleOpenDialog(request)}
                     name={request.name}
                     date={
@@ -316,14 +336,19 @@ function Requests() {
                     formName={request.form}
                     clockNum={request.clockNum}
                     status={request.status}
-                    onAccept={() =>
-                      handleClick(
-                        request.id,
-                        "Accepted",
-                        request.requestID,
-                        request.form
-                      )
-                    }
+                    onAccept={() => {
+                      if (currentUser.role === "IT Member") {
+                        handleOpenDialog(request);
+                      } else {
+                        handleClick(
+                          "requests",
+                          request.id,
+                          "Accepted",
+                          request.requestID,
+                          request.form
+                        );
+                      }
+                    }}
                     onDelete={() => handleOpenDialog(request)}
                     name={request.name}
                     date={
@@ -352,34 +377,60 @@ function Requests() {
 
       {selectedRequest && (
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>Reason for rejection</DialogTitle>
+          <DialogTitle>
+            {currentUser.role === "IT Member"
+              ? "Your Comment"
+              : "Reason for rejection"}
+          </DialogTitle>
           <DialogContent>
             <DialogContentText>
-              To reject this form, please enter your reason here. We will send
-              it to the IT admin.
+              {currentUser.role === "IT Member"
+                ? "To accept this form, please enter your comment here. We will send it to the IT admin."
+                : "To reject this form, please enter your reason here. We will send it to the IT admin."}
             </DialogContentText>
             <TextField
               autoFocus
               margin="dense"
               id="name"
-              label="Reason for rejection"
+              label={
+                currentUser.role === "IT Member"
+                  ? "Your Comment"
+                  : "Reason for rejection"
+              }
               type="text"
               fullWidth
               variant="standard"
+              value={textValue} // Bind the state to the TextField value
+              onChange={handleTextChange} // Handle changes to the input field
+              required
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
             <Button
-              onClick={() =>
-                handleClick(
-                  selectedRequest.id,
-                  "Rejected",
-                  selectedRequest.requestID
-                )
-              }
+              onClick={() => {
+                if (currentUser.role === "IT Member") {
+                  handleClick(
+                    "ItRequests",
+                    selectedRequest.id,
+                    "Accepted",
+                    selectedRequest.requestID,
+                    selectedRequest.form,
+                    textValue
+                  );
+                } else {
+                  handleClick(
+                    "requests",
+                    selectedRequest.id,
+                    "Rejected",
+                    selectedRequest.requestID,
+                    selectedRequest.form,
+                    textValue,
+                  );
+                }
+              }}
             >
-              Confirm
+              Submit
             </Button>
           </DialogActions>
         </Dialog>
