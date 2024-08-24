@@ -130,9 +130,6 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
 
   const [openEmployeesForms, setOpenEmployeesForms] = useState(false);
   const [openMicrosForms, setopenMicrosForms] = useState(false);
-  const [userRole, setUserRole] = useState("");
-  const [username, setUsername] = useState("");
-  const [userHotel, setUserHotel] = useState("");
 
   const handleClickEmployeesForms = () => {
     setOpenEmployeesForms(!openEmployeesForms);
@@ -144,29 +141,6 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
 
   const { currentUser } = useContext(AuthContext);
 
-  const fetchUserData = async (id) => {
-    try {
-      const docRef = doc(db, "users", id);
-      const docSnapshot = await getDoc(docRef);
-
-      if (docSnapshot.exists()) {
-        const { firstName, lastName, role, hotel } = docSnapshot.data();
-        const fullName = `${firstName} ${lastName}`;
-        setUsername(fullName);
-        setUserRole(role);
-        setUserHotel(hotel);
-      } else {
-        console.log("Document not found");
-      }
-    } catch (error) {
-      console.error("Error fetching document:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData(currentUser.uid);
-  }, [currentUser.uid]);
-
   return (
     <Drawer variant="permanent" open={open}>
       <DrawerHeader>
@@ -177,7 +151,7 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
               align="center"
               sx={{ fontSize: 17, transition: "0.25s" }}
             >
-              {username}
+              {currentUser.firstName} {currentUser.lastName}
             </Typography>
             <Typography
               align="center"
@@ -187,7 +161,7 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
                 color: theme.palette.primary.main,
               }}
             >
-              {userRole}
+              {currentUser.role}
             </Typography>
             <Typography
               align="center"
@@ -197,7 +171,7 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
                 color: theme.palette.primary.main,
               }}
             >
-              {userHotel}
+              {currentUser.hotel}
             </Typography>
           </div>
         )}

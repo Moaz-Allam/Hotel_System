@@ -33,14 +33,12 @@ import emailjs from "emailjs-com";
 
 function Requests() {
   const [value, setValue] = useState("1");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [hasNewRequests, setHasNewRequests] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [hasRequests, setHasRequests] = useState(false);
   const [allRequests, setAllRequests] = useState([]);
-  const [username, setUsername] = useState("");
-  const [managerPosition, setManagerPosition] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   const { currentUser } = useContext(AuthContext);
@@ -53,80 +51,67 @@ function Requests() {
     setOpen(false);
   };
 
-  const fetchUserName = async (id) => {
-    try {
-      const docRef = doc(db, "users", id);
-      const docSnapshot = await getDoc(docRef);
-
-      if (docSnapshot.exists()) {
-        const { firstName, lastName, position } = docSnapshot.data();
-        const fullName = `${firstName} ${lastName}`;
-        setUsername(fullName);
-        setManagerPosition(position);
-      } else {
-        console.log("Document not found");
-      }
-    } catch (error) {
-      console.error("Error fetching document:", error);
-    }
-  };
-
   const fetchRequests = useCallback(async () => {
+    if (!currentUser) return;
+
     try {
       setLoading(true);
 
-      if (username) {
-        // Queries to fetch new and all requests
-        const qNew = query(
-          collection(db, "requests"),
-          where("recievedBy", "==", username),
-          where("status", "==", "New")
-        );
+      // Queries to fetch new and all requests
+      const qNew = query(
+        collection(db, "requests"),
+        where(
+          "recievedBy",
+          "==",
+          `${currentUser.firstName} ${currentUser.lastName}`
+        ),
+        where("status", "==", "New")
+      );
 
-        const qAll = query(
-          collection(db, "requests"),
-          where("recievedBy", "==", username),
-          where("status", "in", ["Accepted", "Rejected"])
-        );
+      const qAll = query(
+        collection(db, "requests"),
+        where(
+          "recievedBy",
+          "==",
+          `${currentUser.firstName} ${currentUser.lastName}`
+        ),
+        where("status", "in", ["Accepted", "Rejected"])
+      );
 
-        // Fetch data from Firestore
-        const querySnapshotNew = await getDocs(qNew);
-        const querySnapshotAll = await getDocs(qAll);
+      // Fetch data from Firestore
+      const querySnapshotNew = await getDocs(qNew);
+      const querySnapshotAll = await getDocs(qAll);
 
-        // Process new requests
-        const pendingRequestsData = [];
-        querySnapshotNew.forEach((doc) => {
-          const request = { id: doc.id, ...doc.data() };
-          console.log("New request data:", request); // Debugging log
-          pendingRequestsData.push(request);
-        });
+      // Process new requests
+      const pendingRequestsData = [];
+      querySnapshotNew.forEach((doc) => {
+        const request = { id: doc.id, ...doc.data() };
+        pendingRequestsData.push(request);
+      });
 
-        // Process all requests
-        const allRequestsData = [];
-        querySnapshotAll.forEach((doc) => {
-          const request = { id: doc.id, ...doc.data() };
-          console.log("All request data:", request); // Debugging log
-          allRequestsData.push(request);
-        });
+      // Process all requests
+      const allRequestsData = [];
+      querySnapshotAll.forEach((doc) => {
+        const request = { id: doc.id, ...doc.data() };
+        allRequestsData.push(request);
+      });
 
-        // Update state
-        setPendingRequests(pendingRequestsData);
-        setHasNewRequests(pendingRequestsData.length > 0);
-
-        setAllRequests(allRequestsData);
-        setHasRequests(allRequestsData.length > 0);
-      }
+      // Update state
+      setPendingRequests(pendingRequestsData);
+      setHasNewRequests(pendingRequestsData.length > 0);
+      setAllRequests(allRequestsData);
+      setHasRequests(allRequestsData.length > 0);
     } catch (error) {
       console.error("Error fetching pending requests:", error);
     } finally {
       setLoading(false);
     }
-  }, [username]);
+  }, [currentUser]);
 
   const updateStatus = async (requestID, statusValue, formType) => {
     try {
       let collectionName = "";
-  
+
       // Determine collection based on form type
       switch (formType) {
         case "Micros Change Items":
@@ -138,18 +123,18 @@ function Requests() {
         default:
           collectionName = "employees";
       }
-  
+
       // Query the requests collection
       const q = query(
         collection(db, "requests"),
         where("requestID", "==", requestID)
       );
       const querySnapshot = await getDocs(q);
-  
+
       const allAccepted = querySnapshot.docs.every(
         (doc) => doc.data().status === "Accepted"
       );
-  
+
       if (allAccepted) {
         const docRef = doc(db, collectionName, requestID);
         await updateDoc(docRef, { status: statusValue });
@@ -157,7 +142,7 @@ function Requests() {
     } catch (error) {
       console.error("Error updating status:", error);
     }
-  };  
+  };
 
   const sendEmailToAdmin = async (requestID, statusValue, formType) => {
     try {
@@ -188,7 +173,7 @@ function Requests() {
           const creatorName = preparedBy;
 
           const templateParams = {
-            manager: username,
+            manager: `${currentUser.firstName} ${currentUser.lastName}`,
             form_name: form,
             status: statusValue,
             creator_name: creatorName,
@@ -219,7 +204,6 @@ function Requests() {
       await updateDoc(requestRef, {
         status: statusValue,
         checkedAt: serverTimestamp(),
-        managerPosition: managerPosition,
       });
 
       await updateStatus(employeeID, statusValue, formType);
@@ -235,11 +219,10 @@ function Requests() {
   };
 
   useEffect(() => {
-    if (currentUser.uid) {
-      fetchUserName(currentUser.uid);
+    if (currentUser) {
       fetchRequests();
     }
-  }, [currentUser.uid, fetchRequests]);
+  }, [currentUser]);
 
   const handleOpenDialog = (request) => {
     setSelectedRequest(request);
@@ -281,7 +264,12 @@ function Requests() {
                     clockNum={request.clockNum}
                     status={request.status}
                     onAccept={() =>
-                      handleClick(request.id, "Accepted", request.requestID, request.form)
+                      handleClick(
+                        request.id,
+                        "Accepted",
+                        request.requestID,
+                        request.form
+                      )
                     }
                     onDelete={() => handleOpenDialog(request)}
                     name={request.name}
@@ -329,7 +317,12 @@ function Requests() {
                     clockNum={request.clockNum}
                     status={request.status}
                     onAccept={() =>
-                      handleClick(request.id, "Accepted", request.requestID, request.form)
+                      handleClick(
+                        request.id,
+                        "Accepted",
+                        request.requestID,
+                        request.form
+                      )
                     }
                     onDelete={() => handleOpenDialog(request)}
                     name={request.name}

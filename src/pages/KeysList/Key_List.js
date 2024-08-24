@@ -54,24 +54,6 @@ function KeysList() {
 
   const { currentUser } = useContext(AuthContext);
 
-  const fetchUserCredetials = async (id) => {
-    try {
-      const docRef = doc(db, "users", id);
-      const docSnapshot = await getDoc(docRef);
-
-      if (docSnapshot.exists()) {
-        const { firstName, lastName, role } = docSnapshot.data();
-        const fullName = `${firstName} ${lastName}`;
-        setUsername(fullName);
-        setUserRole(role);
-      } else {
-        console.log("Document not found");
-      }
-    } catch (error) {
-      console.error("Error fetching document:", error);
-    }
-  };
-
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
     const modalContent = modalRef.current;
@@ -297,7 +279,7 @@ function KeysList() {
           <Button
             onClick={() => handleDelete(params.row.id)}
             variant="outlined"
-            disabled={userRole === "IT admin" ? false : true}
+            disabled={currentUser.role === "IT admin" ? false : true}
           >
             Delete
           </Button>
@@ -306,52 +288,48 @@ function KeysList() {
     },
   ];
 
-  const fetchData = useCallback(
-    async (name) => {
-      try {
-        let q;
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
 
-        if (userRole === "IT admin" || userRole === "IT Member") {
-          q = collection(db, "master_keys");
-        } else {
-          q = query(
-            collection(db, "master_keys"),
-            where("preparedBy", "==", name)
-          );
-        }
+    try {
+      let q;
 
-        const querySnapshot = await getDocs(q);
-
-        const employeeDataArray = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          employeeDataArray.push({
-            id: doc.id,
-            keyID: data.keyID || "N/A",
-            name: data.name || "N/A",
-            keySerial: data.keySerial || "N/A",
-            department: data.department || "N/A",
-            position: data.position || "N/A",
-            status: data.status || "N/A",
-          });
-        });
-
-        setEmployeeData(employeeDataArray);
-      } catch (error) {
-        console.error("Error fetching employee data:", error);
-      } finally {
-        setLoading(false);
+      if (currentUser.role === "IT admin" || currentUser.role === "IT Member") {
+        q = collection(db, "master_keys");
+      } else {
+        q = query(
+          collection(db, "master_keys"),
+          where("preparedBy", "==", `${currentUser.firstName} ${currentUser.lastName}`)
+        );
       }
-    },
-    [userRole]
-  );
+
+      const querySnapshot = await getDocs(q);
+
+      const employeeDataArray = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        employeeDataArray.push({
+          id: doc.id,
+          keyID: data.keyID || "N/A",
+          name: data.name || "N/A",
+          keySerial: data.keySerial || "N/A",
+          department: data.department || "N/A",
+          position: data.position || "N/A",
+          status: data.status || "N/A",
+        });
+      });
+
+      setEmployeeData(employeeDataArray);
+    } catch (error) {
+      console.error("Error fetching employee data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchUserCredetials(currentUser.uid);
-    }
-    fetchData(username);
-  }, [currentUser, username, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   return (
     <Box>

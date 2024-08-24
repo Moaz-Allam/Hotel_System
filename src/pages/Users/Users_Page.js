@@ -1,8 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import {
-  DataGrid,
-  GridToolbar
-} from "@mui/x-data-grid";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import {
   Box,
   CircularProgress,
@@ -13,7 +10,7 @@ import {
   Alert,
   Typography,
   TextField,
-  MenuItem
+  MenuItem,
 } from "@mui/material";
 import Header from "../../components/Header";
 import {
@@ -22,42 +19,18 @@ import {
   getDocs,
   updateDoc,
   doc,
-  deleteDoc
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { AuthContext } from "../../context/AuthContext";
-import { getDoc } from "firebase/firestore";
 
 function EmployeesPage() {
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingRow, setEditingRow] = useState(null);
   const [open, setOpen] = useState(false);
-  const [userRole, setUserRole] = useState("");
 
   const { currentUser } = useContext(AuthContext);
-
-  const fetchUserRole = async (userId) => {
-    try {
-      const userDocRef = doc(db, "users", userId);
-      const userDocSnapshot = await getDoc(userDocRef);
-
-      if (userDocSnapshot.exists()) {
-        const userData = userDocSnapshot.data();
-        setUserRole(userData.role);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error getting user data:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser && currentUser.uid) {
-      fetchUserRole(currentUser.uid);
-    }
-  }, [currentUser]);
 
   const columns = [
     { field: "firstName", headerName: "First Name", flex: 1 },
@@ -74,16 +47,20 @@ function EmployeesPage() {
       renderCell: (params) => (
         <Stack direction="row" spacing={2}>
           <Button
-            onClick={() => params.row.status === "Active" ?handleDeActivate(params.row.id) : handleActivate(params.row.id)}
+            onClick={() =>
+              params.row.status === "Active"
+                ? handleDeActivate(params.row.id)
+                : handleActivate(params.row.id)
+            }
             variant="contained"
-            disabled={userRole === "IT Member"}
+            disabled={currentUser.role === "IT Member"}
           >
             {params.row.status === "Active" ? "De-Activate" : "Activate"}
           </Button>
           <Button
             onClick={() => handleDelete(params.row.id)}
             variant="outlined"
-            disabled={userRole === "IT Member"}
+            disabled={currentUser.role === "IT Member"}
           >
             Delete
           </Button>
@@ -92,7 +69,9 @@ function EmployeesPage() {
     },
   ];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
+
     try {
       const q = query(collection(db, "users"));
       const querySnapshot = await getDocs(q);
@@ -118,7 +97,7 @@ function EmployeesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const handleDelete = async (id) => {
     try {
@@ -184,7 +163,7 @@ function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return (
     <Box>
@@ -201,37 +180,53 @@ function EmployeesPage() {
             <TextField
               label="First Name"
               value={editingRow.firstName}
-              onChange={(e) => setEditingRow({ ...editingRow, firstName: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, firstName: e.target.value })
+              }
             />
             <TextField
               label="Last Name"
               value={editingRow.lastName}
-              onChange={(e) => setEditingRow({ ...editingRow, lastName: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, lastName: e.target.value })
+              }
             />
             <TextField
               label="Email"
               value={editingRow.email}
-              onChange={(e) => setEditingRow({ ...editingRow, email: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, email: e.target.value })
+              }
             />
             <TextField
               label="Hotel"
               value={editingRow.hotel}
-              onChange={(e) => setEditingRow({ ...editingRow, hotel: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, hotel: e.target.value })
+              }
               select
             >
-              <MenuItem value="Grand Millennium Tabuk">Grand Millennium Tabuk</MenuItem>
-              <MenuItem value="Grand Millennium Gizan">Grand Millennium Gizan</MenuItem>
+              <MenuItem value="Grand Millennium Tabuk">
+                Grand Millennium Tabuk
+              </MenuItem>
+              <MenuItem value="Grand Millennium Gizan">
+                Grand Millennium Gizan
+              </MenuItem>
               <MenuItem value="Millennium Hail">Millennium Hail</MenuItem>
             </TextField>
             <TextField
               label="Position"
               value={editingRow.position}
-              onChange={(e) => setEditingRow({ ...editingRow, position: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, position: e.target.value })
+              }
             />
             <TextField
               label="Role"
               value={editingRow.role}
-              onChange={(e) => setEditingRow({ ...editingRow, role: e.target.value })}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, role: e.target.value })
+              }
               select
             >
               <MenuItem value="Requester">Requester</MenuItem>
@@ -240,15 +235,22 @@ function EmployeesPage() {
               <MenuItem value="IT Member">IT Member</MenuItem>
             </TextField>
             <Stack direction="row" spacing={2}>
-              <Button onClick={handleSave} variant="contained">Save</Button>
-              <Button onClick={() => setEditingRow(null)} variant="outlined">Cancel</Button>
+              <Button onClick={handleSave} variant="contained">
+                Save
+              </Button>
+              <Button onClick={() => setEditingRow(null)} variant="outlined">
+                Cancel
+              </Button>
             </Stack>
           </Box>
         ) : (
           <div>
             {loading ? (
               <Backdrop
-                sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                sx={{
+                  color: "#fff",
+                  zIndex: (theme) => theme.zIndex.drawer + 1,
+                }}
                 open={true}
               >
                 <CircularProgress color="inherit" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import {
   Alert,
   AlertTitle,
@@ -29,24 +29,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState("");
-  const [userRole, setUserRole] = useState("");
   const navigate = useNavigate();
-
-  const fetchUserRole = async (id) => {
-    try {
-      const docRef = doc(db, "users", id);
-      const docSnapshot = await getDoc(docRef);
-
-      if (docSnapshot.exists()) {
-        const { role } = docSnapshot.data();
-        setUserRole(role);
-      } else {
-        console.log("Document not found");
-      }
-    } catch (error) {
-      console.error("Error fetching document:", error);
-    }
-  };
 
   const { dispatch } = useContext(AuthContext);
 
@@ -62,24 +45,35 @@ const Login = () => {
       );
       const user = userCredential.user;
 
-      dispatch({ type: "LOGIN", payload: user });
+      // Fetch user data from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
 
-      fetchUserRole(user.uid);
+        // Combine auth user and Firestore user data
+        const fullUserData = {
+          uid: user.uid,
+          email: user.email,
+          ...userData,
+        };
+
+        // Dispatch the user data to the AuthContext
+        dispatch({ type: "LOGIN", payload: fullUserData });
+
+        // Navigate based on user role
+        if (userData.role === "Manager") {
+          navigate("/requests");
+        } else {
+          navigate("/employeesList");
+        }
+      } else {
+        console.error("No such document!");
+      }
     } catch (err) {
       setIsError(true);
       setError(err.message);
     }
   };
-
-  useEffect(() => {
-    if (userRole === "Manager") {
-      navigate("/requests");
-    } else if (userRole) {
-      navigate("/employeesList");
-    } else {
-      navigate("/login");
-    }
-  }, [userRole, navigate]);
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -99,7 +93,12 @@ const Login = () => {
           <Typography component="h1" variant="h5" sx={{ color: "#cc0832" }}>
             Sign in
           </Typography>
-          <Box component="form" onSubmit={handleLogin} noValidate sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            onSubmit={handleLogin}
+            noValidate
+            sx={{ mt: 1 }}
+          >
             <TextField
               margin="normal"
               required
@@ -131,7 +130,11 @@ const Login = () => {
                 sx={{ color: "#cc0832" }}
               />
               <Box flexGrow={1}></Box>
-              <Button onClick={() => navigate("/reset")} variant="text" sx={{ color: "#cc0832" }}>
+              <Button
+                onClick={() => navigate("/reset")}
+                variant="text"
+                sx={{ color: "#cc0832" }}
+              >
                 Forget password
               </Button>
             </Stack>

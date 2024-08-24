@@ -46,35 +46,10 @@ const MasterKeyForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isError, setIsError] = useState(false);
-  const [userRole, setUserRole] = useState("");
-  const [currentHotel, setCurrentHotel] = useState("");
 
   const { currentUser } = useContext(AuthContext);
 
   const [managers, setManagers] = useState([]);
-
-  const fetchUserRoleAndHotel = async (userId) => {
-    try {
-      const userDocRef = doc(db, "users", userId);
-      const userDocSnapshot = await getDoc(userDocRef);
-
-      if (userDocSnapshot.exists()) {
-        const userData = userDocSnapshot.data();
-        setUserRole(userData.role);
-        setCurrentHotel(userData.hotel);
-      } else {
-        console.log("Document does not exist");
-      }
-    } catch (error) {
-      console.error("Error getting user data:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser && currentUser.uid) {
-      fetchUserRoleAndHotel(currentUser.uid);
-    }
-  }, [currentUser]);
 
   const fetchManagers = async (department, position, hotel) => {
     try {
@@ -335,9 +310,9 @@ const MasterKeyForm = () => {
           value={selectedHotel}
           onChange={(event) => setSelectedHotel(event.target.value)}
         >
-          {userRole === "Requester" ? (
-            <MenuItem key={currentHotel} value={currentHotel}>
-              {currentHotel}
+          {currentUser.role === "Requester" ? (
+            <MenuItem key={currentUser.hotel} value={currentUser.hotel}>
+              {currentUser.hotel}
             </MenuItem>
           ) : (
             hotels.map((option) => (

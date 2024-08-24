@@ -45,9 +45,7 @@ function EmployeesPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [managers, setManagers] = useState([]);
   const [data, setData] = useState({});
-  const [userRole, setUserRole] = useState("");
   const [hotel, sethotel] = useState("");
-  const [username, setUsername] = useState("");
   const [itAdminName, setItAdminName] = useState("");
   const [FormName, setFormName] = useState("");
 
@@ -68,24 +66,6 @@ function EmployeesPage() {
   const modalRef = useRef(null);
 
   const { currentUser } = useContext(AuthContext);
-
-  const fetchUserCredetials = async (id) => {
-    try {
-      const docRef = doc(db, "users", id);
-      const docSnapshot = await getDoc(docRef);
-
-      if (docSnapshot.exists()) {
-        const { firstName, lastName, role } = docSnapshot.data();
-        const fullName = `${firstName} ${lastName}`;
-        setUsername(fullName);
-        setUserRole(role);
-      } else {
-        console.log("Document not found");
-      }
-    } catch (error) {
-      console.error("Error fetching document:", error);
-    }
-  };
 
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
@@ -319,7 +299,7 @@ function EmployeesPage() {
           <Button
             onClick={() => handleDelete(params.row.id)}
             variant="outlined"
-            disabled={userRole === "IT admin" ? false : true}
+            disabled={currentUser.role === "IT admin" ? false : true}
           >
             Delete
           </Button>
@@ -328,54 +308,54 @@ function EmployeesPage() {
     },
   ];
 
-  const fetchData = useCallback(
-    async (name) => {
-      try {
-        let q;
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
 
-        if (userRole === "IT admin" || userRole === "IT Member") {
-          q = collection(db, "employees");
-        } else {
-          q = query(
-            collection(db, "employees"),
-            where("preparedBy", "==", name)
-          );
-        }
-
-        const querySnapshot = await getDocs(q);
-
-        const employeeDataArray = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          employeeDataArray.push({
-            id: doc.id || "N/A",
-            clockNum: data.clockNum || "N/A",
-            name: data.name || "N/A",
-            hotel: data.hotel || "N/A",
-            position: data.position || "N/A",
-            department: data.department || "N/A",
-            form: data.form || "N/A",
-            status: data.status || "N/A",
-          });
-        });
-
-        setEmployeeData(employeeDataArray);
-      } catch (error) {
-        console.error("Error fetching employee data:", error);
-      } finally {
-        setLoading(false);
+    try {
+      let q;
+      if (currentUser.role === "IT admin" || currentUser.role === "IT Member") {
+        q = collection(db, "employees");
+      } else {
+        q = query(
+          collection(db, "employees"),
+          where(
+            "preparedBy",
+            "==",
+            `${currentUser.firstName} ${currentUser.lastName}`
+          )
+        );
       }
-    },
-    [userRole]
-  );
+
+      const querySnapshot = await getDocs(q);
+      const employeeDataArray = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        employeeDataArray.push({
+          id: doc.id || "N/A",
+          clockNum: data.clockNum || "N/A",
+          name: data.name || "N/A",
+          hotel: data.hotel || "N/A",
+          position: data.position || "N/A",
+          department: data.department || "N/A",
+          form: data.form || "N/A",
+          status: data.status || "N/A",
+        });
+      });
+
+      setEmployeeData(employeeDataArray);
+    } catch (error) {
+      console.error("Error fetching employee data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchUserCredetials(currentUser.uid);
-    }
-    fetchData(username);
-  }, [currentUser, username, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
+  
   return (
     <Box>
       <Header title="FORMS" subTitle="List of IT forms" />
