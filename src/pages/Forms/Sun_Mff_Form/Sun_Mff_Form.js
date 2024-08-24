@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import Header from "../../../components/Header";
 import { departments, authOptions, hotels, textFields } from "./data";
 import { db } from "../../../firebase";
-import { serverTimestamp, addDoc, getDoc, doc } from "firebase/firestore";
+import { serverTimestamp, addDoc, updateDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
 import emailjs from "emailjs-com";
@@ -182,6 +182,9 @@ const SunMffForm = () => {
         preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
         requestID: docRef.id,
       });
+
+      // After creating the document, update it with the requestID
+      await updateDoc(docRef, { requestID: docRef.id });
 
       console.log("Document created with ID:", docRef.id);
     } catch (error) {
@@ -431,7 +434,7 @@ const SunMffForm = () => {
             onClose={handleClose}
           >
             <Alert onClose={handleClose} severity="info" sx={{ width: "100%" }}>
-              Account created successfully
+              Form created successfully
             </Alert>
           </Snackbar>
         </Box>

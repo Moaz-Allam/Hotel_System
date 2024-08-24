@@ -21,7 +21,7 @@ import { useForm } from "react-hook-form";
 import Header from "../../../components/Header";
 import { departments, hotels, textFields } from "./data";
 import { db } from "../../../firebase";
-import { serverTimestamp, addDoc, getDoc, doc } from "firebase/firestore";
+import { serverTimestamp, addDoc, updateDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
 import emailjs from "emailjs-com";
@@ -159,40 +159,40 @@ const MasterKeyForm = () => {
     try {
       // Ensure selectedHotel and currentUser.itMembers are defined
       if (!selectedHotel || !currentUser.itMembers) {
-        throw new Error(
-          "selectedHotel or currentUser.itMembers is not defined."
-        );
+        throw new Error("selectedHotel or currentUser.itMembers is not defined.");
       }
-
+  
       // Find the IT Member with a matching hotel
       const itMember = currentUser.itMembers.find(
         (member) => member.hotel === selectedHotel
       );
-
+  
       if (!itMember) {
         console.error("No IT Member found for the selected hotel.");
         return;
       }
-
+  
       // Get the full name of the IT Member
       const fullName = itMember.fullName;
-
-      // Create a new document in the ItRequests collection
+  
+      // Create a new document in the ItRequests collection without requestID
       const docRef = await addDoc(collection(db, "ItRequests"), {
         ...employeeData,
-          form: "Master Key",
-          createdAt: serverTimestamp(),
-          recievedBy: fullName,
-          status: "New",
-          preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
-          requestID: docRef.id,
+        form: "Master Key",
+        createdAt: serverTimestamp(),
+        recievedBy: fullName,
+        status: "New",
+        preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
       });
-
+  
+      // After creating the document, update it with the requestID
+      await updateDoc(docRef, { requestID: docRef.id });
+  
       console.log("Document created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }
-  };
+  };  
 
   const onSubmit = async (formData) => {
     setLoading(true);
@@ -437,7 +437,7 @@ const MasterKeyForm = () => {
             onClose={handleClose}
           >
             <Alert onClose={handleClose} severity="info" sx={{ width: "100%" }}>
-              Account created successfully
+              Form created successfully
             </Alert>
           </Snackbar>
         </Box>

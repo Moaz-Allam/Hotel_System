@@ -24,6 +24,7 @@ import {
   where,
   getDocs,
   addDoc,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
@@ -163,20 +164,20 @@ const BayanForm = () => {
           "selectedHotel or currentUser.itMembers is not defined."
         );
       }
-  
+
       // Find the IT Member with a matching hotel
       const itMember = currentUser.itMembers.find(
         (member) => member.hotel === selectedHotel
       );
-  
+
       if (!itMember) {
         console.error("No IT Member found for the selected hotel.");
         return;
       }
-  
+
       // Get the full name of the IT Member
       const fullName = itMember.fullName;
-  
+
       // Create a new document in the ItRequests collection
       const docRef = await addDoc(collection(db, "ItRequests"), {
         ...employeeData,
@@ -187,7 +188,10 @@ const BayanForm = () => {
         status: "New",
         preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
       });
-  
+
+      // After creating the document, update it with the requestID
+      await updateDoc(docRef, { requestID: docRef.id });
+
       console.log("Document created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating IT request document:", error);

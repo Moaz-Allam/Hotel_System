@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import Header from "../../../components/Header";
 import { databases, departments, hotels, textFields, data } from "./data";
 import { db } from "../../../firebase";
-import { serverTimestamp, addDoc, getDoc, doc } from "firebase/firestore";
+import { serverTimestamp, addDoc, updateDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
 import emailjs from "emailjs-com";
@@ -200,16 +200,19 @@ const OperaForm = () => {
       // Create a new document in the ItRequests collection
       const docRef = await addDoc(collection(db, "ItRequests"), {
         ...employeeData,
-          form: "Opera",
-          database: selectedDb,
-          authorization: selectedFruit,
-          authorizationOptuins: selectedCheckbooks,
-          createdAt: serverTimestamp(),
-          recievedBy: fullName,
-          status: "New",
-          preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
-          requestID: docRef.id,
+        form: "Opera",
+        database: selectedDb,
+        authorization: selectedFruit,
+        authorizationOptuins: selectedCheckbooks,
+        createdAt: serverTimestamp(),
+        recievedBy: fullName,
+        status: "New",
+        preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
+        requestID: docRef.id,
       });
+
+      // After creating the document, update it with the requestID
+      await updateDoc(docRef, { requestID: docRef.id });
 
       console.log("Document created with ID:", docRef.id);
     } catch (error) {
@@ -257,7 +260,7 @@ const OperaForm = () => {
       await sendEmailToManagers(selectedManagers);
 
       await NotifyITMember(employeeData);
-      
+
       handleClick();
       setIsError(false);
       setError("");
@@ -267,7 +270,7 @@ const OperaForm = () => {
       setSelectedFruit(""); // Clear fruit selection
       setSelectedCheckbooks([]); // Clear checkbook selection
       setSelectedManagers([]);
-      
+
       // Clear form fields after submission
       Object.keys(formData).forEach((field) => {
         setValue(field, "");
@@ -304,14 +307,14 @@ const OperaForm = () => {
       setManagerPositions([]);
     }
   }, [selectedHotel]);
-  
+
   useEffect(() => {
     if (selectedHotel && managerPositions.length > 0) {
       fetchManagers(selectedDepartment, managerPositions, selectedHotel);
     } else {
       setManagers([]); // Clear managers if no hotel or positions are selected
     }
-  }, [selectedHotel, managerPositions, selectedDepartment]);  
+  }, [selectedHotel, managerPositions, selectedDepartment]);
 
   return (
     <Box>
@@ -500,7 +503,7 @@ const OperaForm = () => {
             onClose={handleClose}
           >
             <Alert onClose={handleClose} severity="info" sx={{ width: "100%" }}>
-              Account created successfully
+              Form created successfully
             </Alert>
           </Snackbar>
         </Box>

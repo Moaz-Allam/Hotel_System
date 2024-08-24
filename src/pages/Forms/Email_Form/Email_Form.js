@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import Header from "../../../components/Header";
 import { departments, hotels, textFields } from "./data";
 import { db } from "../../../firebase";
-import { serverTimestamp, addDoc, getDoc, doc } from "firebase/firestore";
+import { serverTimestamp, addDoc, updateDoc } from "firebase/firestore";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
 import AddIcon from "@mui/icons-material/Add";
@@ -196,6 +196,9 @@ const EmailForm = () => {
         preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
         requestID: docRef.id,
       });
+
+      // After creating the document, update it with the requestID
+      await updateDoc(docRef, { requestID: docRef.id });
 
       console.log("Document created with ID:", docRef.id);
     } catch (error) {
