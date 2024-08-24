@@ -273,6 +273,7 @@ function EmployeesPage() {
             <Box flex={1} key={index}>
               <Typography>{item.comment} by: </Typography>
               <Typography>{item.name}</Typography>
+              <Typography>(IT Admin)</Typography>
               <Typography>
                 At: {format(item.checkedAt.toDate(), "dd/MM/yyyy HH:mm")}
               </Typography>

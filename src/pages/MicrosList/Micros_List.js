@@ -44,9 +44,9 @@ function MicrosList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [managers, setManagers] = useState([]);
+  const [itMembers, setItMembers] = useState([]);
   const [data, setData] = useState({});
   const [hotel, sethotel] = useState("");
-  const [itAdminName, setItAdminName] = useState("");
   const [FormName, setFormName] = useState("");
 
   const fieldConfig = {
@@ -102,23 +102,6 @@ function MicrosList() {
         const employeeFormName = docSnapshot.data().form;
         sethotel(employeeHotel);
         setFormName(employeeFormName);
-
-        // Fetch IT Admin based on the employee's hotel
-        const itAdminQuery = query(
-          collection(db, "users"),
-          where("role", "==", "IT Member"),
-          where("hotel", "==", employeeHotel)
-        );
-
-        const itAdminSnapshot = await getDocs(itAdminQuery);
-
-        if (!itAdminSnapshot.empty) {
-          const itAdminDoc = itAdminSnapshot.docs[0];
-          const itAdminData = itAdminDoc.data();
-          setItAdminName(`${itAdminData.firstName} ${itAdminData.lastName}`);
-        } else {
-          setItAdminName("N/A");
-        }
       } else {
         console.log("Document not found");
       }
@@ -146,7 +129,29 @@ function MicrosList() {
         });
       });
 
+      // displaying the managers and dates
+      const itRequestsRef = collection(db, "ItRequests");
+
+      // Create a query to find documents with the specified requestID
+      const itQ = query(itRequestsRef, where("requestID", "==", id));
+
+      const itQuerySnapshot = await getDocs(itQ);
+
+      const itMembersArray = [];
+
+      // Loop through the query results and extract the desired fields
+      itQuerySnapshot.forEach((doc) => {
+        const data = doc.data();
+        itMembersArray.push({
+          name: data.recievedBy,
+          comment: data.comment,
+          checkedAt: data.checkedAt,
+          createdAt: data.createdAt,
+        });
+      });
+
       setManagers(managersArray);
+      setItMembers(itMembersArray);
     } catch (error) {
       console.error("Error fetching document:", error);
     }
@@ -177,6 +182,14 @@ function MicrosList() {
     } catch (error) {
       console.error("Error deleting document:", error);
     }
+  };
+
+  const getTimeDifference = (startDate, endDate) => {
+    const diffMs = endDate - startDate; // Difference in milliseconds
+    const diffMinutes = Math.floor(diffMs / (1000 * 60)); // Difference in minutes
+    const hours = Math.abs(Math.floor(diffMinutes / 60));
+    const minutes = Math.abs(diffMinutes % 60);
+    return `${hours}h, ${minutes}min`;
   };
 
   const dialogContent = (
@@ -253,10 +266,26 @@ function MicrosList() {
           ))}
         </Stack>
         <Divider />
+        <Stack sx={{ p: 2 }} direction="row">
+          {itMembers.map((item, index) => (
+            <Box flex={1} key={index}>
+              <Typography>{item.comment} by: </Typography>
+              <Typography>{item.name}</Typography>
+              <Typography>(IT Member)</Typography>
+              <Typography>
+                At: {format(item.checkedAt.toDate(), "dd/MM/yyyy HH:mm")}
+              </Typography>
+              <Typography>
+                Time Taken: {getTimeDifference(item.checkedAt, item.createdAt)}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+        <Divider />
         <Box sx={{ p: 2 }}>
           <Typography>Recieved by:</Typography>
-          <Typography>{itAdminName}</Typography> {/* IT Admin name here */}
-          <Typography>(IT Member)</Typography>
+          <Typography>Abduallah Allam</Typography> {/* IT Admin name here */}
+          <Typography>(IT Admin)</Typography>
           <Typography>At: {format(new Date(), "dd/MM/yyyy HH:mm")}</Typography>
         </Box>
       </div>
