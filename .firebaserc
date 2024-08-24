@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "admin-app-181a3",
+    "www.admuin-app.com": "admin-app-181a3"
+  },
+  "targets": {},
+  "etags": {}
+}
