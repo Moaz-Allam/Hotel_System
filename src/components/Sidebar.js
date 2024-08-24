@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import {
   List,
   Divider,
@@ -13,8 +13,6 @@ import {
   Tooltip,
   Collapse,
 } from "@mui/material";
-import { db } from "../firebase";
-import { getDoc, doc } from "firebase/firestore";
 import MuiDrawer from "@mui/material/Drawer";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import UsersListIcon from "@mui/icons-material/List";

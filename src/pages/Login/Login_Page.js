@@ -20,7 +20,7 @@ import HotelLogo from "../../assets/hotelLogo.jpg";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { AuthContext } from "../../context/AuthContext";
 import { auth, db } from "../../firebase";
-import { getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, query, collection, where, getDocs } from "firebase/firestore";
 
 const defaultTheme = createTheme();
 
@@ -50,11 +50,28 @@ const Login = () => {
       if (userDoc.exists()) {
         const userData = userDoc.data();
 
+        // Fetch IT Members data
+        const itMembersQuery = query(
+          collection(db, "users"),
+          where("role", "==", "IT Member")
+        );
+        const itMembersSnapshot = await getDocs(itMembersQuery);
+
+        const itMembersData = itMembersSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            fullName: `${data.firstName} ${data.lastName}`,
+            hotel: data.hotel,
+          };
+        });
+
         // Combine auth user and Firestore user data
         const fullUserData = {
           uid: user.uid,
           email: user.email,
           ...userData,
+          itMembers: itMembersData, // Add IT members data here
         };
 
         // Dispatch the user data to the AuthContext

@@ -44,9 +44,7 @@ function KeysList() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [managers, setManagers] = useState([]);
   const [data, setData] = useState({});
-  const [userRole, setUserRole] = useState("");
   const [hotel, sethotel] = useState("");
-  const [username, setUsername] = useState("");
   const [itAdminName, setItAdminName] = useState("");
   const [FormName, setFormName] = useState("");
 
