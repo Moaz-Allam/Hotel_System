@@ -132,6 +132,7 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
   const [openMicrosForms, setopenMicrosForms] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [username, setUsername] = useState("");
+  const [userHotel, setUserHotel] = useState("");
 
   const handleClickEmployeesForms = () => {
     setOpenEmployeesForms(!openEmployeesForms);
@@ -143,16 +144,17 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
 
   const { currentUser } = useContext(AuthContext);
 
-  const fetchUserRole = async (id) => {
+  const fetchUserData = async (id) => {
     try {
       const docRef = doc(db, "users", id);
       const docSnapshot = await getDoc(docRef);
 
       if (docSnapshot.exists()) {
-        const { firstName, lastName, role } = docSnapshot.data();
+        const { firstName, lastName, role, hotel } = docSnapshot.data();
         const fullName = `${firstName} ${lastName}`;
         setUsername(fullName);
         setUserRole(role);
+        setUserHotel(hotel);
       } else {
         console.log("Document not found");
       }
@@ -162,28 +164,43 @@ const SideBar = ({ open, handleDrawerOpen, handleDrawerClose }) => {
   };
 
   useEffect(() => {
-    fetchUserRole(currentUser.uid);
+    fetchUserData(currentUser.uid);
   }, [currentUser.uid]);
 
   return (
     <Drawer variant="permanent" open={open}>
       <DrawerHeader>
         <Box flexGrow={1} />
-        <div style={{ padding: 7 }}>
-          <Typography sx={{ fontSize: 17, transition: "0.25s" }}>
-            {username}
-          </Typography>
-          <Typography
-            align="center"
-            sx={{
-              fontSize: 15,
-              transition: "0.25s",
-              color: theme.palette.primary.main,
-            }}
-          >
-            {userRole}
-          </Typography>
-        </div>
+        {open && (
+          <div style={{ padding: 7 }}>
+            <Typography
+              align="center"
+              sx={{ fontSize: 17, transition: "0.25s" }}
+            >
+              {username}
+            </Typography>
+            <Typography
+              align="center"
+              sx={{
+                fontSize: 15,
+                transition: "0.25s",
+                color: theme.palette.primary.main,
+              }}
+            >
+              {userRole}
+            </Typography>
+            <Typography
+              align="center"
+              sx={{
+                fontSize: 12,
+                transition: "0.25s",
+                color: theme.palette.primary.main,
+              }}
+            >
+              {userHotel}
+            </Typography>
+          </div>
+        )}
         <Box flexGrow={1} />
       </DrawerHeader>
       <Divider />

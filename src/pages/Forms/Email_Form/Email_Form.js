@@ -275,25 +275,36 @@ const EmailForm = () => {
   };
 
   useEffect(() => {
-    switch (selectedHotel) {
-      case "Grand Millennium Tabuk":
-        setSelectedHotelImage(Tabuk);
-        setManagerPositions(["CDOF", "CGM"]);
-        break;
-      case "Grand Millennium Gizan":
-        setSelectedHotelImage(Gizan);
-        setManagerPositions(["FM", "HOM"]);
-        break;
-      case "Millennium Hail":
-        setSelectedHotelImage(Hail);
-        setManagerPositions(["FM", "HOM"]);
-        break;
-      default:
-        setSelectedHotelImage("");
-        setManagerPositions([]);
+    if (selectedHotel) {
+      switch (selectedHotel) {
+        case "Grand Millennium Tabuk":
+          setSelectedHotelImage(Tabuk);
+          setManagerPositions(["CDOF", "CGM"]);
+          break;
+        case "Grand Millennium Gizan":
+          setSelectedHotelImage(Gizan);
+          setManagerPositions(["FM", "HOM"]);
+          break;
+        case "Millennium Hail":
+          setSelectedHotelImage(Hail);
+          setManagerPositions(["FM", "HOM"]);
+          break;
+        default:
+          setSelectedHotelImage("");
+          setManagerPositions([]);
+      }
+    } else {
+      setSelectedHotelImage("");
+      setManagerPositions([]);
     }
-
-    fetchManagers(selectedDepartment, managerPositions, selectedHotel);
+  }, [selectedHotel]);
+  
+  useEffect(() => {
+    if (selectedHotel && managerPositions.length > 0) {
+      fetchManagers(selectedDepartment, managerPositions, selectedHotel);
+    } else {
+      setManagers([]); // Clear managers if no hotel or positions are selected
+    }
   }, [selectedHotel, managerPositions, selectedDepartment]);
 
   return (
@@ -427,6 +438,7 @@ const EmailForm = () => {
         <Autocomplete
           multiple
           id="tags-filled-2"
+          disabled={managers.length === 0}
           options={managers.map((option) => option)}
           value={selectedManagers}
           onChange={(event, newValue) => setSelectedManagers(newValue)} // Update the selected managers array
@@ -441,7 +453,7 @@ const EmailForm = () => {
             ))
           }
           renderInput={(params) => (
-            <TextField {...params} variant="filled" label="Managers" />
+            <TextField {...params} variant="filled" label="Manager" />
           )}
         />
 
