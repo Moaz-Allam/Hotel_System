@@ -210,14 +210,18 @@ function Requests() {
     statusValue,
     employeeID,
     formType,
-    comment,
+    comment
   ) => {
     try {
       const requestRef = doc(db, collectionName, requestId);
+
+      // Ensure that comment is defined and not null; otherwise, set it to an empty string
+      const commentToUpdate = comment !== undefined ? comment : "";
+
       await updateDoc(requestRef, {
         status: statusValue,
         checkedAt: serverTimestamp(),
-        comment: comment,
+        comment: commentToUpdate,
       });
 
       await updateStatus(employeeID, statusValue, formType);
@@ -425,7 +429,7 @@ function Requests() {
                     "Rejected",
                     selectedRequest.requestID,
                     selectedRequest.form,
-                    textValue,
+                    textValue
                   );
                 }
               }}
