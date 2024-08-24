@@ -149,7 +149,7 @@ const MicrosForm = () => {
     }
   };
 
-  const NotifyITMember = async (employeeData) => {
+  const NotifyITMember = async (employeeData, requestID) => {
     try {
       // Ensure selectedHotel and currentUser.itMembers are defined
       if (!selectedHotel || !currentUser.itMembers) {
@@ -180,13 +180,8 @@ const MicrosForm = () => {
           recievedBy: fullName,
           status: "New",
           preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
-          requestID: docRef.id,
+          requestID: requestID,
       });
-
-      // After creating the document, update it with the requestID
-    await updateDoc(docRef, { requestID: docRef.id });
-
-      console.log("Document created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }
@@ -227,7 +222,7 @@ const MicrosForm = () => {
       await sendEmailToAdmin();
       await sendEmailToManagers(selectedManagers);
 
-      await NotifyITMember(employeeData);
+      await NotifyITMember(employeeData, docRef.id);
 
       handleClick();
       setIsError(false);
