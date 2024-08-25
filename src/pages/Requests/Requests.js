@@ -69,7 +69,7 @@ function Requests() {
             "==",
             `${currentUser.firstName} ${currentUser.lastName}`
           ),
-          where("status", "==", "New")
+          where("status", "in", ["New", "Under Processing"])
         );
 
         const qAll = query(
@@ -79,7 +79,7 @@ function Requests() {
             "==",
             `${currentUser.firstName} ${currentUser.lastName}`
           ),
-          where("status", "in", ["Accepted", "Rejected"])
+          where("status", "in", ["Accepted", "Rejected", "Done"])
         );
 
         // Fetch data from Firestore
@@ -141,8 +141,11 @@ function Requests() {
         (doc) => doc.data().status === "Accepted"
       );
 
-      if (allAccepted) {
-        const docRef = doc(db, collectionName, requestID);
+      // Update the status in the determined collection
+      const docRef = doc(db, collectionName, requestID);
+
+      // Skip the allAccepted check if the status is "Rejected"
+      if (statusValue === "Rejected" || allAccepted) {
         await updateDoc(docRef, { status: statusValue });
       }
     } catch (error) {
@@ -209,19 +212,15 @@ function Requests() {
     requestId,
     statusValue,
     employeeID,
-    formType,
-    comment
+    formType
   ) => {
     try {
       const requestRef = doc(db, collectionName, requestId);
 
-      // Ensure that comment is defined and not null; otherwise, set it to an empty string
-      const commentToUpdate = comment !== undefined ? comment : "";
-
       await updateDoc(requestRef, {
         status: statusValue,
         checkedAt: serverTimestamp(),
-        comment: commentToUpdate,
+        managerPosition: currentUser.position,
       });
 
       await updateStatus(employeeID, statusValue, formType);
@@ -279,12 +278,26 @@ function Requests() {
               pendingRequests.map((request, index) => (
                 <div key={index} style={{ marginBottom: "16px" }}>
                   <RequestCard
+                    Accepttitle={
+                      currentUser.role === "IT Member" ? "Done" : "Accept"
+                    }
+                    secTitle={
+                      currentUser.role === "IT Member"
+                        ? "Under Processing"
+                        : "Reject"
+                    }
                     formName={request.form}
                     clockNum={request.clockNum}
                     status={request.status}
                     onAccept={() => {
                       if (currentUser.role === "IT Member") {
-                        handleOpenDialog(request);
+                        handleClick(
+                          "ItRequests",
+                          request.id,
+                          "Done",
+                          request.requestID,
+                          request.form
+                        );
                       } else {
                         handleClick(
                           "requests",
@@ -295,7 +308,19 @@ function Requests() {
                         );
                       }
                     }}
-                    onDelete={() => handleOpenDialog(request)}
+                    onDelete={() => {
+                      if (currentUser.role === "IT Member") {
+                        handleClick(
+                          "ItRequests",
+                          request.id,
+                          "Under Processing",
+                          request.requestID,
+                          request.form
+                        );
+                      } else {
+                        handleOpenDialog(request);
+                      }
+                    }}
                     name={request.name}
                     date={
                       request.createdAt &&
@@ -337,6 +362,14 @@ function Requests() {
               allRequests.map((request, index) => (
                 <div key={index} style={{ marginBottom: "16px" }}>
                   <RequestCard
+                    Accepttitle={
+                      currentUser.role === "IT Member" ? "Done" : "Accept"
+                    }
+                    secTitle={
+                      currentUser.role === "IT Member"
+                        ? "Under Processing"
+                        : "Reject"
+                    }
                     formName={request.form}
                     clockNum={request.clockNum}
                     status={request.status}
@@ -381,26 +414,17 @@ function Requests() {
 
       {selectedRequest && (
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>
-            {currentUser.role === "IT Member"
-              ? "Your Comment"
-              : "Reason for rejection"}
-          </DialogTitle>
+          <DialogTitle>Reason for rejection</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              {currentUser.role === "IT Member"
-                ? "To accept this form, please enter your comment here. We will send it to the IT admin."
-                : "To reject this form, please enter your reason here. We will send it to the IT admin."}
+              To accept this form, please enter your comment here. We will send
+              it to the IT admin.
             </DialogContentText>
             <TextField
               autoFocus
               margin="dense"
               id="name"
-              label={
-                currentUser.role === "IT Member"
-                  ? "Your Comment"
-                  : "Reason for rejection"
-              }
+              label={"Reason for rejection"}
               type="text"
               fullWidth
               variant="standard"
@@ -413,25 +437,14 @@ function Requests() {
             <Button onClick={handleClose}>Cancel</Button>
             <Button
               onClick={() => {
-                if (currentUser.role === "IT Member") {
-                  handleClick(
-                    "ItRequests",
-                    selectedRequest.id,
-                    "Accepted",
-                    selectedRequest.requestID,
-                    selectedRequest.form,
-                    textValue
-                  );
-                } else {
-                  handleClick(
-                    "requests",
-                    selectedRequest.id,
-                    "Rejected",
-                    selectedRequest.requestID,
-                    selectedRequest.form,
-                    textValue
-                  );
-                }
+                handleClick(
+                  "requests",
+                  selectedRequest.id,
+                  "Rejected",
+                  selectedRequest.requestID,
+                  selectedRequest.form,
+                  textValue
+                );
               }}
             >
               Submit

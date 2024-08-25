@@ -32,9 +32,8 @@ function RequestCard({
   keyType,
   department,
   id,
-  recievedBy,
-  requestID,
-  createdAt,
+  Accepttitle, 
+  secTitle,
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -117,13 +116,13 @@ function RequestCard({
           </Avatar>
         }
         action={
-          status === "New" ? (
+          status === "New" || status === "Under Processing" ? (
             <CardActions>
               <Button onClick={onAccept} variant="contained">
-                Accept
+                {Accepttitle}
               </Button>
               <Button onClick={onDelete} variant="outlined">
-                Reject
+                {secTitle}
               </Button>
               <IconButton
                 aria-label="show more"

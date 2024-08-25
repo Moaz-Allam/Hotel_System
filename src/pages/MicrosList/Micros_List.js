@@ -184,12 +184,14 @@ function MicrosList() {
     }
   };
 
-  const getTimeDifference = (startDate, endDate) => {
-    const diffMs = endDate - startDate; // Difference in milliseconds
+  const getTimeDifference = (startTimestamp, endTimestamp) => {
+    const startDate = startTimestamp.toDate(); // Convert to Date object
+    const endDate = endTimestamp.toDate(); // Convert to Date object
+
+    const diffMs = startDate - endDate; // Difference in milliseconds
     const diffMinutes = Math.floor(diffMs / (1000 * 60)); // Difference in minutes
     const hours = Math.abs(Math.floor(diffMinutes / 60));
-    const minutes = Math.abs(diffMinutes % 60);
-    return `${hours}h, ${minutes}min`;
+    return `${hours}h, ${diffMinutes} min`;
   };
 
   const dialogContent = (
@@ -283,8 +285,7 @@ function MicrosList() {
         </Stack>
         <Divider />
         <Box sx={{ p: 2 }}>
-          <Typography>Recieved by:</Typography>
-          <Typography>Abduallah Allam</Typography> {/* IT Admin name here */}
+          <Typography>Sent to Abduallah Allam for archiving:</Typography>
           <Typography>(IT Admin)</Typography>
           <Typography>At: {format(new Date(), "dd/MM/yyyy HH:mm")}</Typography>
         </Box>

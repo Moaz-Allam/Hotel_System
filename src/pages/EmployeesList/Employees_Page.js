@@ -147,7 +147,7 @@ function EmployeesPage() {
         const data = doc.data();
         itMembersArray.push({
           name: data.recievedBy,
-          comment: data.comment,
+          status: data.status,
           checkedAt: data.checkedAt,
           createdAt: data.createdAt,
         });
@@ -187,12 +187,14 @@ function EmployeesPage() {
     }
   };
 
-  const getTimeDifference = (startDate, endDate) => {
-    const diffMs = endDate - startDate; // Difference in milliseconds
+  const getTimeDifference = (startTimestamp, endTimestamp) => {
+    const startDate = startTimestamp.toDate(); // Convert to Date object
+    const endDate = endTimestamp.toDate(); // Convert to Date object
+
+    const diffMs = startDate - endDate; // Difference in milliseconds
     const diffMinutes = Math.floor(diffMs / (1000 * 60)); // Difference in minutes
     const hours = Math.abs(Math.floor(diffMinutes / 60));
-    const minutes = Math.abs(diffMinutes % 60);
-    return `${hours}h, ${minutes}min`;
+    return `${hours}h, ${diffMinutes} min`;
   };
 
   const dialogContent = (
@@ -271,9 +273,9 @@ function EmployeesPage() {
         <Stack sx={{ p: 2 }} direction="row">
           {itMembers.map((item, index) => (
             <Box flex={1} key={index}>
-              <Typography>{item.comment} by: </Typography>
+              <Typography>{item.status} by: </Typography>
               <Typography>{item.name}</Typography>
-              <Typography>(IT Admin)</Typography>
+              <Typography>(IT Member)</Typography>
               <Typography>
                 At: {format(item.checkedAt.toDate(), "dd/MM/yyyy HH:mm")}
               </Typography>
@@ -285,8 +287,7 @@ function EmployeesPage() {
         </Stack>
         <Divider />
         <Box sx={{ p: 2 }}>
-          <Typography>Recieved by:</Typography>
-          <Typography>Abduallah</Typography> {/* IT Admin name here */}
+          <Typography>Sent to Abduallah Allam for archiving:</Typography>
           <Typography>(IT Admin)</Typography>
           <Typography>At: {format(new Date(), "dd/MM/yyyy HH:mm")}</Typography>
         </Box>
