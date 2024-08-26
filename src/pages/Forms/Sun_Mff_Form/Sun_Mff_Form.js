@@ -183,7 +183,7 @@ const SunMffForm = () => {
         requestID: requestID,
       });
 
-      console.log("Document created with ID:", docRef.id);
+      await sendEmailToManagers([fullName]);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }

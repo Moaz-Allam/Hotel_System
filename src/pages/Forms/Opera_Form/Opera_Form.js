@@ -210,6 +210,8 @@ const OperaForm = () => {
         preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
         requestID: requestID,
       });
+
+      await sendEmailToManagers([fullName]);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }

@@ -161,20 +161,20 @@ const MasterKeyForm = () => {
       if (!selectedHotel || !currentUser.itMembers) {
         throw new Error("selectedHotel or currentUser.itMembers is not defined.");
       }
-  
+
       // Find the IT Member with a matching hotel
       const itMember = currentUser.itMembers.find(
         (member) => member.hotel === selectedHotel
       );
-  
+
       if (!itMember) {
         console.error("No IT Member found for the selected hotel.");
         return;
       }
-  
+
       // Get the full name of the IT Member
       const fullName = itMember.fullName;
-  
+
       // Create a new document in the ItRequests collection without requestID
       const docRef = await addDoc(collection(db, "ItRequests"), {
         ...employeeData,
@@ -185,10 +185,12 @@ const MasterKeyForm = () => {
         preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
         requestID: requestID,
       });
+
+      await sendEmailToManagers([fullName]);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }
-  };  
+  };
 
   const onSubmit = async (formData) => {
     setLoading(true);

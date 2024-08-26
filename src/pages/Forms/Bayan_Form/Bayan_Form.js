@@ -24,7 +24,6 @@ import {
   where,
   getDocs,
   addDoc,
-  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { AuthContext } from "../../../context/AuthContext";
@@ -190,7 +189,7 @@ const BayanForm = () => {
         requestID: requestID,
       });
 
-      console.log("Document created with ID:", docRef.id);
+      await sendEmailToManagers([fullName]);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }

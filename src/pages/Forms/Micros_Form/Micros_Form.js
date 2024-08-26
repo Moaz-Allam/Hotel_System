@@ -174,14 +174,16 @@ const MicrosForm = () => {
       // Create a new document in the ItRequests collection
       const docRef = await addDoc(collection(db, "ItRequests"), {
         ...employeeData,
-          form: "Micros",
-          authorization: selectedCheckbooks,
-          createdAt: serverTimestamp(),
-          recievedBy: fullName,
-          status: "New",
-          preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
-          requestID: requestID,
+        form: "Micros",
+        authorization: selectedCheckbooks,
+        createdAt: serverTimestamp(),
+        recievedBy: fullName,
+        status: "New",
+        preparedBy: `${currentUser.firstName} ${currentUser.lastName}`,
+        requestID: requestID,
       });
+
+      await sendEmailToManagers([fullName]);
     } catch (error) {
       console.error("Error creating IT request document:", error);
     }
@@ -268,7 +270,7 @@ const MicrosForm = () => {
       setManagerPositions([]);
     }
   }, [selectedHotel]);
-  
+
   useEffect(() => {
     if (selectedHotel && managerPositions.length > 0) {
       fetchManagers(selectedDepartment, managerPositions, selectedHotel);
