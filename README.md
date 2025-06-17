@@ -1,70 +1,97 @@
-# Getting Started with Create React App
+# Hotel System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A single-page web application for managing hotel staff and HR processes, built with modern React tools and Firebase.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+* **Employee Management**: Add, edit, and remove employee profiles.
+* **Scheduling**: Create and track shift assignments, interviews, and other appointments.
+* **PDF Generation**: Generate contracts, pay stubs, and reports on the fly using html2pdf.js.
+* **Email Notifications**: Send offer letters, reminders, and other transactional emails via EmailJS.
+* **Authentication & Data Storage**: Secure user sign-in and real-time database with Firebase.
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* **Frontend**: React (Create React App), React Router v6
+* **UI Library**: Material UI (MUI) & MUI Data Grid
+* **Forms**: React Hook Form
+* **Backend Services**: Firebase (Authentication, Firestore) & firebase-admin
+* **Email**: EmailJS (`emailjs-com`)
+* **PDFs**: html2pdf.js
+* **Date Utilities**: date-fns
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+* [Node.js](https://nodejs.org/) (>=14.x)
+* npm (comes with Node.js)
+* A Firebase project with Firestore and Authentication enabled
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. **Clone the repo**
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+   ```bash
+   git clone https://github.com/Moaz-Allam/Hotel_System.git
+   cd Hotel_System
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+2. **Install dependencies**
 
-### `npm run eject`
+   ```bash
+   npm install
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+3. **Configure Firebase**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+   * Copy `.env.example` to `.env` and fill in your Firebase config values.
+   * Place your service account JSON under `src/firebase/` and update the import path if necessary.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **Run the app locally**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+   ```bash
+   npm start
+   ```
 
-## Learn More
+The application will be available at `http://localhost:3000`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Build for Production
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm run build
+```
 
-### Code Splitting
+The optimized build will be in the `build/` directory.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Project Structure
 
-### Analyzing the Bundle Size
+```
+Hotel_System/
+├── public/               # Static assets
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── pages/            # Route-based page components
+│   ├── firebase/         # Firebase config & admin SDK
+│   ├── forms/            # React Hook Form definitions
+│   ├── utils/            # Utility functions (e.g., date formatting)
+│   └── App.js            # Main app and router
+├── .env.example          # Firebase environment variables template
+├── firebase.json         # Firebase hosting & functions config
+├── package.json
+└── README.md
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Contributing
 
-### Making a Progressive Web App
+Contributions are welcome! Please open an issue or submit a pull request.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
 
-### Advanced Configuration
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
